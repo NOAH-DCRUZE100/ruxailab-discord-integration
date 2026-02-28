@@ -15,7 +15,7 @@ name: 🔔 Discord Push Notification
 on:
   push:
     branches:
-      - "**"   # Listen on ALL branches
+     - "**"   # Listen on ALL branches
 
 # ── Jobs ───────────────────────────────────────────────────
 jobs:
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1 — Check out the code so we can read git metadata
+      # Step 1 — Check out the code so we can read the git metadata
       - name: ⬇️ Checkout repository
         uses: actions/checkout@v4
 
