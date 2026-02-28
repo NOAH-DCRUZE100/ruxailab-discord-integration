@@ -1,140 +1,140 @@
 # ============================================================
 # File: .github/workflows/notify.yml
 # Project: GSoC 2026 PoC — GitHub Actions × Discord Integration
-# Author: NOAH DCRUZE
+# Author: (Your Name)
 # Description:
-#   Triggers on every push to any branch and sends a
-#   "Hello World" notification to a Discord channel via
-#   webhook. The committer's GitHub username and commit
-# messages are included in the embed for context.
+#   Triggers on every push to any branch and sends a
+#   "Hello World" notification to a Discord channel via
+#   webhook. The committer's GitHub username and commit
+#   message are included in the embed for context.
 # ============================================================
 
 name: 🔔 Discord Push Notification
 
-# ── Trigger ──────────────────────────────────────────────── 
+# ── Trigger ────────────────────────────────────────────────
 on:
-  push:
-    branches:
-     - "**"   # Listen on ALL branches
+  push:
+    branches:
+      - "**"   # Listen on ALL branches
 
 # ── Jobs ───────────────────────────────────────────────────
 jobs:
-  notify-discord:
-    name: Send Hello World to Discord
-    runs-on: ubuntu-latest
+  notify-discord:
+    name: Send Hello World to Discord
+    runs-on: ubuntu-latest
 
-    steps:
-      # Step 1 — Check out the code so we can read the git metadata
-      - name: ⬇️ Checkout repository
-        uses: actions/checkout@v4
+    steps:
+      # Step 1 — Check out the code so we can read git metadata
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
 
-      # Step 2 — Build and send the Discord webhook payload
-      #
-      # We use a Python one-liner so the JSON is easy to
-      # read and extend. The webhook URL is pulled from
-      # GitHub Secrets — it is NEVER hard-coded here.
-      #
-      # Context variables used:
-      #   github.actor        → GitHub username of the pusher
-      #   github.event.head_commit.message → latest commit msg
-      #   github.repository   → "owner/repo" string
-      #   github.ref_name     → branch name
-      #   github.sha          → full commit SHA
-      - name: 📨 Notify Discord
-        env:
-          # ⚠️  Store your webhook URL in:
-          #     Settings → Secrets and variables → Actions
-          #     Secret name: DISCORD_WEBHOOK
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      # Step 2 — Build and send the Discord webhook payload
+      #
+      # We use a Python one-liner so the JSON is easy to
+      # read and extend. The webhook URL is pulled from
+      # GitHub Secrets — it is NEVER hard-coded here.
+      #
+      # Context variables used:
+      #   github.actor        → GitHub username of the pusher
+      #   github.event.head_commit.message → latest commit msg
+      #   github.repository   → "owner/repo" string
+      #   github.ref_name     → branch name
+      #   github.sha          → full commit SHA
+      - name: 📨 Notify Discord
+        env:
+          # ⚠️  Store your webhook URL in:
+          #     Settings → Secrets and variables → Actions
+          #     Secret name: DISCORD_WEBHOOK
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
-          # Expose GitHub context as env vars for the script
-          GH_ACTOR:    ${{ github.actor }}
-          GH_REPO:     ${{ github.repository }}
-          GH_BRANCH:   ${{ github.ref_name }}
-          GH_SHA:      ${{ github.sha }}
-          GH_MSG:      ${{ github.event.head_commit.message }}
-          GH_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          # Expose GitHub context as env vars for the script
+          GH_ACTOR:    ${{ github.actor }}
+          GH_REPO:     ${{ github.repository }}
+          GH_BRANCH:   ${{ github.ref_name }}
+          GH_SHA:      ${{ github.sha }}
+          GH_MSG:      ${{ github.event.head_commit.message }}
+          GH_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
 
-        run: |
-          python3 - <<'EOF'
-          import os
-          import json
-          import urllib.request
-          import urllib.error
+        run: |
+          python3 - <<'EOF'
+          import os
+          import json
+          import urllib.request
+          import urllib.error
 
-          # ── Read environment variables ──────────────────────
-          webhook_url = os.environ["DISCORD_WEBHOOK"]
-          actor       = os.environ["GH_ACTOR"]
-          repo        = os.environ["GH_REPO"]
-          branch      = os.environ["GH_BRANCH"]
-          sha         = os.environ["GH_SHA"]
-          commit_msg  = os.environ["GH_MSG"]
-          repo_url    = os.environ["GH_REPO_URL"]
+          # ── Read environment variables ──────────────────────
+          webhook_url = os.environ["DISCORD_WEBHOOK"]
+          actor       = os.environ["GH_ACTOR"]
+          repo        = os.environ["GH_REPO"]
+          branch      = os.environ["GH_BRANCH"]
+          sha         = os.environ["GH_SHA"]
+          commit_msg  = os.environ["GH_MSG"]
+          repo_url    = os.environ["GH_REPO_URL"]
 
-          short_sha   = sha[:7]   # First 7 chars — standard convention
-          commit_url  = f"{repo_url}/commit/{sha}"
-          actor_url   = f"https://github.com/{actor}"
-          avatar_url  = f"https://github.com/{actor}.png?size=128"
+          short_sha   = sha[:7]   # First 7 chars — standard convention
+          commit_url  = f"{repo_url}/commit/{sha}"
+          actor_url   = f"https://github.com/{actor}"
+          avatar_url  = f"https://github.com/{actor}.png?size=128"
 
-          # ── Build the Discord Embed payload ────────────────
-          # Discord embeds let us create rich, structured cards.
-          payload = {
-            "content": "👋 **Hello World!** A new push just landed.",
-            "embeds": [
-              {
-                "title": f"📦 New Push to `{repo}`",
-                "url": commit_url,
-                "color": 0x5865F2,   # Discord Blurple
-                "author": {
-                  "name": actor,
-                  "url": actor_url,
-                  "icon_url": avatar_url
-                },
-                "fields": [
-                  {
-                    "name": "👤 Pushed by",
-                    "value": f"[{actor}]({actor_url})",
-                    "inline": True
-                  },
-                  {
-                    "name": "🌿 Branch",
-                    "value": f"`{branch}`",
-                    "inline": True
-                  },
-                  {
-                    "name": "🔖 Commit",
-                    "value": f"[`{short_sha}`]({commit_url})",
-                    "inline": True
-                  },
-                  {
-                    "name": "💬 Commit Message",
-                    "value": commit_msg or "_No message provided_",
-                    "inline": False
-                  }
-                ],
-                "footer": {
-                  "text": "GitHub Actions × Discord PoC — RUXAILAB GSoC 2026"
-                },
-                "thumbnail": {
-                  "url": avatar_url
-                }
-              }
-            ]
-          }
+          # ── Build the Discord Embed payload ────────────────
+          # Discord embeds let us create rich, structured cards.
+          payload = {
+            "content": "👋 **Hello World!** A new push just landed.",
+            "embeds": [
+              {
+                "title": f"📦 New Push to `{repo}`",
+                "url": commit_url,
+                "color": 0x5865F2,   # Discord Blurple
+                "author": {
+                  "name": actor,
+                  "url": actor_url,
+                  "icon_url": avatar_url
+                },
+                "fields": [
+                  {
+                    "name": "👤 Pushed by",
+                    "value": f"[{actor}]({actor_url})",
+                    "inline": True
+                  },
+                  {
+                    "name": "🌿 Branch",
+                    "value": f"`{branch}`",
+                    "inline": True
+                  },
+                  {
+                    "name": "🔖 Commit",
+                    "value": f"[`{short_sha}`]({commit_url})",
+                    "inline": True
+                  },
+                  {
+                    "name": "💬 Commit Message",
+                    "value": commit_msg or "_No message provided_",
+                    "inline": False
+                  }
+                ],
+                "footer": {
+                  "text": "GitHub Actions × Discord PoC — RUXAILAB GSoC 2026"
+                },
+                "thumbnail": {
+                  "url": avatar_url
+                }
+              }
+            ]
+          }
 
-          # ── Send the HTTP POST request ──────────────────────
-          body = json.dumps(payload).encode("utf-8")
-          req  = urllib.request.Request(
-              webhook_url,
-              data    = body,
-              headers = {"Content-Type": "application/json"},
-              method  = "POST"
-          )
+          # ── Send the HTTP POST request ──────────────────────
+          body = json.dumps(payload).encode("utf-8")
+          req  = urllib.request.Request(
+              webhook_url,
+              data    = body,
+              headers = {"Content-Type": "application/json"},
+              method  = "POST"
+          )
 
-          try:
-              with urllib.request.urlopen(req) as resp:
-                  print(f"✅ Discord notified — HTTP {resp.status}")
-          except urllib.error.HTTPError as e:
-              print(f"❌ Failed to notify Discord — HTTP {e.code}: {e.reason}")
-              raise SystemExit(1)   # Fail the step so the Action shows red
-          EOF
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  print(f"✅ Discord notified — HTTP {resp.status}")
+          except urllib.error.HTTPError as e:
+              print(f"❌ Failed to notify Discord — HTTP {e.code}: {e.reason}")
+              raise SystemExit(1)   # Fail the step so the Action shows red
+          EOF
