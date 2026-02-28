@@ -1,7 +1,7 @@
 # ============================================================
 # File: .github/workflows/notify.yml
 # Project: GSoC 2026 PoC — GitHub Actions × Discord Integration
-# Author: (Your Name)
+# Author: NOAH DCRUZE
 # Description:
 #   Triggers on every push to any branch and sends a
 #   "Hello World" notification to a Discord channel via
